@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.env
+.pytest_cache/
+temp_recording.wav
+meeting_audio.wav
+.vscode/
+.idea/
