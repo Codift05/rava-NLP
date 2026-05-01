@@ -2,9 +2,10 @@ import sys
 import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QComboBox, 
-                             QTextEdit, QProgressBar, QSplitter)
+                             QTextEdit, QProgressBar, QSplitter, QFileDialog, QMessageBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
+from docx import Document
 
 from audio_capture import AudioRecorder
 from stt_engine import STTEngine
@@ -83,6 +84,12 @@ class RavaApp(QMainWindow):
         self.btn_stop.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 5px;")
         controls_layout.addWidget(self.btn_stop)
         
+        self.btn_export = QPushButton("Export to Word")
+        self.btn_export.clicked.connect(self.export_document)
+        self.btn_export.setEnabled(False)
+        self.btn_export.setStyleSheet("background-color: #2196F3; color: white; font-weight: bold; padding: 5px;")
+        controls_layout.addWidget(self.btn_export)
+        
         main_layout.addLayout(controls_layout)
         
         # Status Bar
@@ -131,6 +138,7 @@ class RavaApp(QMainWindow):
         
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
+        self.btn_export.setEnabled(False)
         self.status_label.setText("Status: Recording...")
         self.status_label.setStyleSheet("color: red; font-weight: bold;")
         self.text_transcription.clear()
@@ -169,11 +177,38 @@ class RavaApp(QMainWindow):
         self.status_label.setText("Status: Processing Complete")
         self.status_label.setStyleSheet("color: green; font-weight: bold;")
         self.btn_start.setEnabled(True)
+        self.btn_export.setEnabled(True)
         
     def processing_error(self, err_msg):
         self.status_label.setText(f"Status: Error - {err_msg}")
         self.status_label.setStyleSheet("color: red; font-weight: bold;")
         self.btn_start.setEnabled(True)
+        
+    def export_document(self):
+        transcription = self.text_transcription.toPlainText()
+        summary = self.text_summary.toPlainText()
+        
+        if not transcription or not summary:
+            QMessageBox.warning(self, "Export Error", "No content to export!")
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save Document", "Rava_Meeting_Summary.docx", "Word Documents (*.docx)")
+        
+        if file_path:
+            try:
+                doc = Document()
+                doc.add_heading('Rava Meeting Summary', 0)
+                
+                doc.add_heading('Executive Summary', level=1)
+                doc.add_paragraph(summary)
+                
+                doc.add_heading('Full Transcription', level=1)
+                doc.add_paragraph(transcription)
+                
+                doc.save(file_path)
+                QMessageBox.information(self, "Export Success", f"Document saved successfully to:\n{file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Export Error", f"Failed to save document:\n{str(e)}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

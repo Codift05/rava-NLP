@@ -5,3 +5,4 @@ torch
 transformers
 openai-whisper
 PyQt6
+python-docx
