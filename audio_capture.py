@@ -6,12 +6,12 @@ import queue
 import time
 
 class AudioRecorder:
-    def __init__(self, samplerate=16000, channels=1):
-        self.samplerate = samplerate
+    def __init__(self, channels=1):
         self.channels = channels
         self.is_recording = False
         self.audio_queue = queue.Queue()
         self.recording_thread = None
+        self.actual_samplerate = 44100
 
     def get_devices(self):
         devices = sd.query_devices()
@@ -36,10 +36,10 @@ class AudioRecorder:
         
         def record():
             try:
-                with sd.InputStream(samplerate=self.samplerate, 
-                                    device=device_index,
+                with sd.InputStream(device=device_index,
                                     channels=self.channels, 
-                                    callback=self._callback):
+                                    callback=self._callback) as stream:
+                    self.actual_samplerate = int(stream.samplerate)
                     while self.is_recording:
                         time.sleep(0.1)
             except Exception as e:
@@ -60,6 +60,6 @@ class AudioRecorder:
         
         if audio_data:
             audio_data = np.concatenate(audio_data, axis=0)
-            wav.write(filename, self.samplerate, audio_data)
+            wav.write(filename, self.actual_samplerate, audio_data)
             return filename
         return None
